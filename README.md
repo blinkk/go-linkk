@@ -19,7 +19,7 @@ This project requires the following:
 
 After cloning the repository copy the `app-example.yaml` to `app.yaml` and update the `AUTH_DOMAINS` variable to match the domain name for administrators. Multiple domains can be separated by a `|`.
 
-Generate the UI by running `grow build` in the `ui/` directory. Any time files change in the `ui/` directory the `grow build` command will need to be run for AppEngine to pick up the changes.
+Generate the UI by running `grow install` followed by `grow build` in the `ui/` directory. Any time files change in the `ui/` directory the `grow build` command will need to be run for AppEngine development and deployments to pick up the changes.
 
 ## Deploying
 
