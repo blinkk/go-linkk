@@ -1,6 +1,6 @@
 const request = require('superagent')
 
-export default class CreateForm {
+export default class EditForm {
   constructor(config) {
     this.config = config || {}
     this.form = document.querySelector('#create-form')
@@ -13,6 +13,13 @@ export default class CreateForm {
     this.errors = {}
 
     this.form.addEventListener('submit', this.processForm.bind(this))
+
+    // Initial value.
+    const queryString = window.location.search.substring(1)
+    const searchParams = new URLSearchParams(queryString)
+    if (searchParams.has("path")) {
+      this.fields['path'].value = searchParams.get("path")
+    }
   }
 
   clearErrors() {
@@ -70,7 +77,7 @@ export default class CreateForm {
 
     this.status.textContent = 'Submitting...'
 
-    request.post('/_/api/create')
+    request.post('/_/api/edit')
       .type('form')
       .send(values)
       .end(function(err, response) {
@@ -90,7 +97,7 @@ export default class CreateForm {
           return
         }
 
-        console.log(response.body);
+        console.log(response.body)
         this.status.textContent = 'Success!'
       }.bind(this))
 
