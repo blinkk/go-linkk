@@ -65,7 +65,7 @@ export default class CreateForm {
 
     if (this.hasErrors()) {
       console.log('Errors:', this.errors)
-      return
+      return false
     }
 
     this.status.textContent = 'Submitting...'
@@ -93,6 +93,8 @@ export default class CreateForm {
         console.log(response.body);
         this.status.textContent = 'Success!'
       }.bind(this))
+
+      return false
   }
 
   cleanAndValidate(values) {

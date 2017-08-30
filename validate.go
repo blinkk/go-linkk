@@ -53,13 +53,16 @@ func (msg *Linkk) Validate() error {
 	if prefix != "" ||
 		stringInSlice(msg.Path, reservedPrefixes) ||
 		stringInSlice(msg.Path+"/", reservedPrefixes) {
+		if prefix == "" {
+			prefix = msg.Path
+		}
 		validationErrors.Errors["Path"] = fmt.Sprintf("Path cannot start with a reserved prefix: %s.", prefix)
 	}
 
 	// URL needs to start with the right protocols.
 	validProtocols := []string{"http://", "https://"}
 	if stringPrefixInSlice(msg.URL, validProtocols) == "" {
-		validationErrors.Errors["URL"] = fmt.Sprintf("Url needs to be a valid protocol: %v.", validProtocols)
+		validationErrors.Errors["URL"] = fmt.Sprintf("Url needs to have a valid protocol: %v.", validProtocols)
 	}
 
 	if len(validationErrors.Errors) > 0 {

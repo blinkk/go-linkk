@@ -50,6 +50,8 @@ func apiCreateHandler(w http.ResponseWriter, r *http.Request) {
 			writeJSONError(ctx, w, err, "Unable to store new linkk", http.StatusInternalServerError)
 			return
 		}
+
+		writeJSONResponse(ctx, w, EntityResponse{Key: key, Entity: linkk})
 	}
 }
 
