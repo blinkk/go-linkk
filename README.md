@@ -1,6 +1,6 @@
 # Go Linkk
 
-Custom URL redirection based on a Google Sheet and run on Go AppEngine.
+Custom URL redirection on Go AppEngine.
 
 ex:
 
