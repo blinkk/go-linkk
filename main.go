@@ -16,7 +16,7 @@ import (
 )
 
 func init() {
-	http.HandleFunc("/_/api/create", apiCreateHandler)
+	http.HandleFunc("/_/api/edit", apiCreateHandler)
 	http.HandleFunc("/~/", infoHandler)
 	http.HandleFunc("/", redirectHandler)
 }
@@ -31,13 +31,11 @@ func apiCreateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == "POST" {
-		// TODO: Check for existing linkk with same path.
 		linkk := &Linkk{
 			Path:    r.FormValue("path"),
 			URL:     r.FormValue("url"),
 			Comment: r.FormValue("comment"),
 		}
-
 		linkk.Clean()
 		err = linkk.Validate()
 		if err != nil {
@@ -45,7 +43,15 @@ func apiCreateHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		key := datastore.NewIncompleteKey(ctx, "Linkk", nil)
+		// Test for existing object to overwrite.
+		key, _, err := getLinkkByPath(ctx, linkk.Path)
+		if err != nil {
+			writeJSONError(ctx, w, err, "Unable to search for linkk", http.StatusInternalServerError)
+			return
+		}
+		if key == nil {
+			key = datastore.NewIncompleteKey(ctx, "Linkk", nil)
+		}
 		if _, err := datastore.Put(ctx, key, linkk); err != nil {
 			writeJSONError(ctx, w, err, "Unable to store new linkk", http.StatusInternalServerError)
 			return
@@ -120,9 +126,9 @@ func infoHandler(w http.ResponseWriter, r *http.Request) {
 func redirectHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
-	// Root path, redirect to create ui.
+	// Root path, redirect to edit ui.
 	if r.URL.Path == "/" {
-		http.Redirect(w, r, "/_/ui/create/index.html", 301)
+		http.Redirect(w, r, "/_/ui/edit/index.html", 301)
 	}
 
 	// Get the linkk from cache if available.
@@ -157,6 +163,6 @@ func redirectHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Not found, redirect to page to create the redirect.
-	http.Redirect(w, r, fmt.Sprintf("/_/ui/create/index.html?path=%s", url.QueryEscape(r.URL.Path)), 301)
+	// Not found, redirect to page to edit the redirect.
+	http.Redirect(w, r, fmt.Sprintf("/_/ui/edit/index.html?path=%s", url.QueryEscape(r.URL.Path)), 301)
 }

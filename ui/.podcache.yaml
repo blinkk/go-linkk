@@ -1,8 +1,8 @@
 dependencies:
-  /content/pages/create.yaml:
-  - /dist/css/composite/create.min.css
+  /content/pages/edit.yaml:
+  - /dist/css/composite/edit.min.css
   - /dist/css/composite/global.min.css
-  - /dist/js/composite/create.min.js
+  - /dist/js/composite/edit.min.js
   - /dist/js/composite/global.min.js
-  - /partials/create-form/create-form.html
+  - /partials/edit-form/edit-form.html
 objects: {}

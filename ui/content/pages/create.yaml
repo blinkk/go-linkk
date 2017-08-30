@@ -1,7 +1,0 @@
-$title: Create Linkk
-
-composite_files:
-- create
-
-partials:
-- partial: create-form

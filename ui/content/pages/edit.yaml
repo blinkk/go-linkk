@@ -1,0 +1,7 @@
+$title: Edit Linkk
+
+composite_files:
+- edit
+
+partials:
+- partial: edit-form
