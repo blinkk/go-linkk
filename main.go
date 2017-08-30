@@ -1,0 +1,171 @@
+package main
+
+import (
+	"errors"
+	"fmt"
+	"golang.org/x/net/context"
+	"google.golang.org/appengine"
+	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/memcache"
+	"google.golang.org/appengine/user"
+	"net/http"
+	"net/url"
+	"os"
+	"regexp"
+	"strings"
+)
+
+// Linkk object for storing information about links.
+type Linkk struct {
+	Path    string
+	URL     string
+	Comment string
+}
+
+func init() {
+	http.HandleFunc("/_/api/create", apiCreateHandler)
+	http.HandleFunc("/_/", infoHandler)
+	http.HandleFunc("/", redirectHandler)
+}
+
+func apiCreateHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := appengine.NewContext(r)
+	u := user.Current(ctx)
+	err := authUserDomain(u)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	if r.Method == "POST" {
+		// TODO: Restricted prefixes (_/, css/ js/ static/, ~/)
+		// TODO: Check for existing linkk with same path.
+		linkk := &Linkk{
+			Path:    r.FormValue("path"),
+			URL:     r.FormValue("url"),
+			Comment: r.FormValue("comment"),
+		}
+		cleanLinkk(linkk)
+		key := datastore.NewIncompleteKey(ctx, "Linkk", nil)
+		if _, err := datastore.Put(ctx, key, linkk); err != nil {
+			http.Error(w, "Unable to store new linkk", http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
+func authUserDomain(u *user.User) error {
+	if u.AuthDomain != "gmail.com" {
+		return errors.New("Invalid auth domain set for authorization")
+	}
+
+	domains := getAuthDomains()
+
+	if len(domains) == 0 {
+		return errors.New("No auth domains configured for authorization")
+	}
+
+	r, _ := regexp.Compile("@(.*)$")
+	domain := r.FindStringSubmatch(u.Email)
+
+	if !stringInSlice(domain[1], domains) {
+		return fmt.Errorf("Invalid authorization domain: %s", domain[1])
+	}
+
+	return nil
+}
+
+func cleanLinkk(linkk *Linkk) {
+	if !strings.HasPrefix(linkk.Path, "/") {
+		linkk.Path = "/" + linkk.Path
+	}
+	if strings.HasSuffix(linkk.Path, "/") {
+		linkk.Path = linkk.Path[:len(linkk.Path)-1]
+	}
+}
+
+func getAuthDomains() []string {
+	return strings.Split(os.Getenv("AUTH_DOMAINS"), "|")
+}
+
+func getLinkkByPath(ctx context.Context, path string) (key *datastore.Key, linkk *Linkk, err error) {
+	q := datastore.NewQuery("Linkk").Filter("Path =", path)
+	t := q.Run(ctx)
+	for {
+		var linkk Linkk
+		key, err := t.Next(&linkk)
+		if err == datastore.Done {
+			break
+		}
+		if err != nil {
+			return nil, nil, err
+		}
+		return key, &linkk, nil
+	}
+	// No linkk found.
+	return nil, nil, nil
+}
+
+func infoHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := appengine.NewContext(r)
+	u := user.Current(ctx)
+	err := authUserDomain(u)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+	fmt.Fprintf(w, `Welcome, user %s!`, u)
+}
+
+func redirectHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := appengine.NewContext(r)
+
+	// Root path, redirect to create ui.
+	if r.URL.Path == "/" {
+		http.Redirect(w, r, fmt.Sprintf("/_/ui/create/index.html", url.QueryEscape(r.URL.Path)), 301)
+	}
+
+	// Get the linkk from cache if available.
+	if item, err := memcache.Get(ctx, r.URL.Path); err == memcache.ErrCacheMiss {
+		// Not found, ignore.
+	} else if err != nil {
+		http.Error(w, "Unable to check cache for linkk", http.StatusInternalServerError)
+		return
+	} else {
+		http.Redirect(w, r, string(item.Value), 301)
+		return
+	}
+
+	// Search for the path in the existing linkks.
+	_, linkk, err := getLinkkByPath(ctx, r.URL.Path)
+	if err != nil {
+		http.Error(w, "Unable to search for linkk"+r.URL.Path, http.StatusInternalServerError)
+		return
+	}
+
+	// Save to caceh and redirect.
+	if linkk != nil {
+		item := &memcache.Item{
+			Key:   linkk.Path,
+			Value: []byte(linkk.URL),
+		}
+		if err := memcache.Set(ctx, item); err != nil {
+			http.Error(w, "Unable to cache linkk", http.StatusInternalServerError)
+			return
+		}
+		http.Redirect(w, r, linkk.URL, 301)
+		return
+	}
+
+	// Not found, redirect to page to create the redirect.
+	http.Redirect(w, r, fmt.Sprintf("/_/ui/create/index.html?path=%s", url.QueryEscape(r.URL.Path)), 301)
+}
+
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
+}

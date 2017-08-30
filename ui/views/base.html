@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta content="initial-scale=1, minimum-scale=1, width=device-width, user-scalable=no" name="viewport">
+    <title>
+      {% block title %}
+        {% if doc.meta and doc.meta.title %}
+          {{_(doc.meta.title)}}
+        {% else %}
+          {% if doc.title %}{{doc.title}}{% elif template and template.title %}{{template.title}}{% endif %} - Linkk
+        {% endif %}
+      {% endblock %}
+    </title>
+    {% if doc.meta %}
+      {% if doc.meta.title %}
+        <meta content="{{doc.meta.title|safe}}" property="og:title">
+        <meta content="{{doc.meta.title|safe}}" itemprop="title">
+      {% endif %}
+      {% if doc.meta.description %}
+        <meta content="{{doc.meta.description|safe}}" property="og:description">
+        <meta content="{{doc.meta.description|safe}}" itemprop="description">
+        <meta content="{{doc.meta.description|safe}}" name="description">
+      {% endif %}
+      {% if doc.meta.share_graphic %}
+        {% if doc.meta.share_graphic.url %}
+          {% set share_graphic_url = doc.meta.share_graphic.url %}
+        {% else %}
+          {% set share_graphic_url = doc.meta.share_graphic %}
+        {% endif %}
+        <meta content="{{share_graphic_url}}" property="og:image">
+        <meta content="{{share_graphic_url}}" itemprop="image">
+      {% endif %}
+      {% if doc.meta.url %}
+        <meta content="{{doc.meta.url}}" property="og:url">
+        <meta content="{{doc.meta.url}}" itemprop="url">
+      {% endif %}
+    {% endif %}
+    {% block head_meta %}
+    {% endblock %}
+    <link href="{{ g.static('/dist/css/composite/global.min.css').url.path }}" rel="stylesheet">
+    {% set compositeCssFiles = [doc.view|replace('.html', '')] %}
+    {% set compositeCssFiles = compositeCssFiles + (doc.composite_files if doc.composite_files else []) %}
+    {% for compositeCssFile in compositeCssFiles %}
+      {% if not compositeCssFile.startswith('/') %}
+        {% set compositeCssFile = '/' ~ compositeCssFile %}
+      {% endif %}
+      {% set viewCssFile = '/dist/css/composite' ~ compositeCssFile ~ '.min.css' %}
+      {% if doc.pod.file_exists(viewCssFile) %}
+        <link href="{{ g.static(viewCssFile).url.path }}" rel="stylesheet">
+      {% endif %}
+    {% endfor %}
+
+    {% block head_base %}
+    {% endblock %}
+  </head>
+  <body>
+    <div class="linkk">
+      {% block main_pre %}
+      {% endblock %}
+
+      {% block main %}
+        {% for field in doc.fields.get('partials') %}
+          {% if not field.partial %}
+            {% continue %}
+          {% endif %}
+
+          {# Determine whether the field corresponds to a partial. #}
+          {% set partial_filename = field.partial|expand_partial %}
+
+          {# Render the partial with the field values in {{partial}}. #}
+          {% with partial = field %}
+            {% include partial_filename with context %}
+          {% endwith %}
+        {% endfor %}
+      {% endblock %}
+    </div>
+    
+    <script src="{{ g.static('/dist/js/composite/global.min.js').url.path }}"></script>
+    {% set compositeJsFiles = [doc.view|replace('.html', '')] %}
+    {% set compositeJsFiles = compositeJsFiles + (doc.composite_files if doc.composite_files else []) %}
+    {% for compositeJsFile in compositeJsFiles %}
+      {% if not compositeJsFile.startswith('/') %}
+        {% set compositeJsFile = '/' ~ compositeJsFile %}
+      {% endif %}
+      {% set viewJsFile = '/dist/js/composite' ~ compositeJsFile ~ '.min.js' %}
+      {% if doc.pod.file_exists(viewJsFile) %}
+        <script src="{{ g.static(viewJsFile).url.path }}"></script>
+      {% endif %}
+    {% endfor %}
+  </body>
+</html>

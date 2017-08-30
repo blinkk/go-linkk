@@ -12,3 +12,10 @@
 
 # Project-local glide cache, RE: https://github.com/Masterminds/glide/issues/736
 .glide/
+
+# Grow ignores.
+ui/build
+ui/node_modules
+ui/dist
+
+app.yaml

@@ -1,0 +1,8 @@
+dependencies:
+  /content/pages/create.yaml:
+  - /dist/css/composite/create.min.css
+  - /dist/css/composite/global.min.css
+  - /dist/js/composite/create.min.js
+  - /dist/js/composite/global.min.js
+  - /partials/create-form/create-form.html
+objects: {}

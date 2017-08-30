@@ -1,0 +1,19 @@
+grow_version: ">=0.2.4"
+title: Linkk
+
+localization:
+  default_locale: en_US
+
+preprocessors:
+- kind: gulp
+  build_task: grow-build
+
+static_dirs:
+- static_dir: /static/
+  serve_at: /static/
+- static_dir: /dist/css/
+  serve_at: /css/
+  fingerprinted: true
+- static_dir: /dist/js/
+  serve_at: /js/
+  fingerprinted: true
