@@ -15,13 +15,6 @@ import (
 	"strings"
 )
 
-// Linkk object for storing information about links.
-type Linkk struct {
-	Path    string
-	URL     string
-	Comment string
-}
-
 func init() {
 	http.HandleFunc("/_/api/create", apiCreateHandler)
 	http.HandleFunc("/_/", infoHandler)
@@ -33,33 +26,43 @@ func apiCreateHandler(w http.ResponseWriter, r *http.Request) {
 	u := user.Current(ctx)
 	err := authUserDomain(u)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		writeJSONError(ctx, w, err, "", http.StatusUnauthorized)
 		return
 	}
 
 	if r.Method == "POST" {
-		// TODO: Restricted prefixes (_/, css/ js/ static/, ~/)
 		// TODO: Check for existing linkk with same path.
 		linkk := &Linkk{
 			Path:    r.FormValue("path"),
 			URL:     r.FormValue("url"),
 			Comment: r.FormValue("comment"),
 		}
-		cleanLinkk(linkk)
+
+		linkk.Clean()
+		err = linkk.Validate()
+		if err != nil {
+			writeJSONError(ctx, w, err, "", http.StatusInternalServerError)
+			return
+		}
+
 		key := datastore.NewIncompleteKey(ctx, "Linkk", nil)
 		if _, err := datastore.Put(ctx, key, linkk); err != nil {
-			http.Error(w, "Unable to store new linkk", http.StatusInternalServerError)
+			writeJSONError(ctx, w, err, "Unable to store new linkk", http.StatusInternalServerError)
 			return
 		}
 	}
 }
 
 func authUserDomain(u *user.User) error {
-	if u.AuthDomain != "gmail.com" {
-		return errors.New("Invalid auth domain set for authorization")
+	if !appengine.IsDevAppServer() && u.AuthDomain != "gmail.com" {
+		return fmt.Errorf("Invalid auth domain set for authorization: %s", u.AuthDomain)
 	}
 
 	domains := getAuthDomains()
+
+	if appengine.IsDevAppServer() {
+		domains = append(domains, "example.com")
+	}
 
 	if len(domains) == 0 {
 		return errors.New("No auth domains configured for authorization")
@@ -73,15 +76,6 @@ func authUserDomain(u *user.User) error {
 	}
 
 	return nil
-}
-
-func cleanLinkk(linkk *Linkk) {
-	if !strings.HasPrefix(linkk.Path, "/") {
-		linkk.Path = "/" + linkk.Path
-	}
-	if strings.HasSuffix(linkk.Path, "/") {
-		linkk.Path = linkk.Path[:len(linkk.Path)-1]
-	}
 }
 
 func getAuthDomains() []string {
@@ -111,7 +105,7 @@ func infoHandler(w http.ResponseWriter, r *http.Request) {
 	u := user.Current(ctx)
 	err := authUserDomain(u)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		writeJSONError(ctx, w, err, "", http.StatusUnauthorized)
 		return
 	}
 	fmt.Fprintf(w, `Welcome, user %s!`, u)
@@ -129,7 +123,7 @@ func redirectHandler(w http.ResponseWriter, r *http.Request) {
 	if item, err := memcache.Get(ctx, r.URL.Path); err == memcache.ErrCacheMiss {
 		// Not found, ignore.
 	} else if err != nil {
-		http.Error(w, "Unable to check cache for linkk", http.StatusInternalServerError)
+		writeJSONError(ctx, w, err, "Unable to check cache for linkk", http.StatusInternalServerError)
 		return
 	} else {
 		http.Redirect(w, r, string(item.Value), 301)
@@ -139,7 +133,7 @@ func redirectHandler(w http.ResponseWriter, r *http.Request) {
 	// Search for the path in the existing linkks.
 	_, linkk, err := getLinkkByPath(ctx, r.URL.Path)
 	if err != nil {
-		http.Error(w, "Unable to search for linkk"+r.URL.Path, http.StatusInternalServerError)
+		writeJSONError(ctx, w, err, "Unable to search for linkk", http.StatusInternalServerError)
 		return
 	}
 
@@ -150,7 +144,7 @@ func redirectHandler(w http.ResponseWriter, r *http.Request) {
 			Value: []byte(linkk.URL),
 		}
 		if err := memcache.Set(ctx, item); err != nil {
-			http.Error(w, "Unable to cache linkk", http.StatusInternalServerError)
+			writeJSONError(ctx, w, err, "Unable to cache linkk", http.StatusInternalServerError)
 			return
 		}
 		http.Redirect(w, r, linkk.URL, 301)
@@ -159,13 +153,4 @@ func redirectHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Not found, redirect to page to create the redirect.
 	http.Redirect(w, r, fmt.Sprintf("/_/ui/create/index.html?path=%s", url.QueryEscape(r.URL.Path)), 301)
-}
-
-func stringInSlice(a string, list []string) bool {
-	for _, b := range list {
-		if b == a {
-			return true
-		}
-	}
-	return false
 }
