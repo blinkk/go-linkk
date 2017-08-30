@@ -83,6 +83,7 @@ func getAuthDomains() []string {
 }
 
 func getLinkkByPath(ctx context.Context, path string) (key *datastore.Key, linkk *Linkk, err error) {
+	path = strings.ToLower(path)
 	q := datastore.NewQuery("Linkk").Filter("Path =", path)
 	t := q.Run(ctx)
 	for {
@@ -102,13 +103,6 @@ func getLinkkByPath(ctx context.Context, path string) (key *datastore.Key, linkk
 
 func infoHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
-	u := user.Current(ctx)
-	err := authUserDomain(u)
-	if err != nil {
-		writeJSONError(ctx, w, err, "", http.StatusUnauthorized)
-		return
-	}
-
 	path := r.URL.Path[2:]
 
 	// Search for the path in the existing linkks.
