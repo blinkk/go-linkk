@@ -17,7 +17,7 @@ import (
 
 func init() {
 	http.HandleFunc("/_/api/create", apiCreateHandler)
-	http.HandleFunc("/_/", infoHandler)
+	http.HandleFunc("/~/", infoHandler)
 	http.HandleFunc("/", redirectHandler)
 }
 
@@ -108,7 +108,17 @@ func infoHandler(w http.ResponseWriter, r *http.Request) {
 		writeJSONError(ctx, w, err, "", http.StatusUnauthorized)
 		return
 	}
-	fmt.Fprintf(w, `Welcome, user %s!`, u)
+
+	path := r.URL.Path[2:]
+
+	// Search for the path in the existing linkks.
+	key, linkk, err := getLinkkByPath(ctx, path)
+	if err != nil {
+		writeJSONError(ctx, w, err, "Unable to search for linkk", http.StatusInternalServerError)
+		return
+	}
+
+	writeJSONResponse(ctx, w, EntityResponse{Key: key, Entity: linkk})
 }
 
 func redirectHandler(w http.ResponseWriter, r *http.Request) {
@@ -116,7 +126,7 @@ func redirectHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Root path, redirect to create ui.
 	if r.URL.Path == "/" {
-		http.Redirect(w, r, fmt.Sprintf("/_/ui/create/index.html", url.QueryEscape(r.URL.Path)), 301)
+		http.Redirect(w, r, "/_/ui/create/index.html", 301)
 	}
 
 	// Get the linkk from cache if available.
