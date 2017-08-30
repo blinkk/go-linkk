@@ -12,9 +12,6 @@ handlers:
 - url: /_/.*
   login: required
   script: _go_app
-- url: /~/.*
-  login: required
-  script: _go_app
 - url: /.*
   script: _go_app
 
