@@ -1,19 +1,23 @@
 <div class="create-form">
   <form id="create-form">
     <div class="create-form__element">
-      <label for="path">Path</label>
+      <label for="path">Path*</label>
       <input type="text" name="path" required="true" />
+      <div class="create-form__errors"></div>
     </div>
     <div class="create-form__element">
-      <label for="path">URL</label>
+      <label for="path">URL*</label>
       <input type="text" name="url" required="true" />
+      <div class="create-form__errors"></div>
     </div>
     <div class="create-form__element">
       <label for="path">Comment</label>
       <input type="text" name="comment" />
+      <div class="create-form__errors"></div>
     </div>
     <div class="create-form__action">
       <button form="create-form">Submit</button>
     </div>
+    <div class="create-form__status"></div>
   </form>
 </div>

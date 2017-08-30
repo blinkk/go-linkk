@@ -4,6 +4,7 @@ export default class CreateForm {
   constructor(config) {
     this.config = config || {}
     this.form = document.querySelector('#create-form')
+    this.status = this.form.querySelector('.create-form__status')
     this.fields = {
       'path': this.form.querySelector('[name=path]'),
       'url': this.form.querySelector('[name=url]'),
@@ -14,9 +15,32 @@ export default class CreateForm {
     this.form.addEventListener('submit', this.processForm.bind(this))
   }
 
+  clearErrors() {
+    for (var prop in this.errors) {
+      if (this.errors.hasOwnProperty(prop)) {
+        delete this.errors[prop]
+      }
+    }
+    return false
+  }
+
+  displayErrors() {
+    for (var prop in this.fields) {
+      if (this.fields.hasOwnProperty(prop)) {
+        const field_error = this.fields[prop].parentNode.querySelector('.create-form__errors')
+        if (this.errors[prop]) {
+          field_error.textContent = this.errors[prop]
+        } else {
+          field_error.textContent = ''
+        }
+      }
+    }
+    return false
+  }
+
   hasErrors() {
-    for (var prop in self.errors) {
-      if (self.errors.hasOwnProperty(prop)) {
+    for (var prop in this.errors) {
+      if (this.errors.hasOwnProperty(prop)) {
         if (this.errors[prop]) {
           return true
         }
@@ -37,23 +61,38 @@ export default class CreateForm {
     }
 
     values = this.cleanAndValidate(values)
+    this.displayErrors()
 
     if (this.hasErrors()) {
       console.log('Errors:', this.errors)
       return
     }
 
+    this.status.textContent = 'Submitting...'
+
     request.post('/_/api/create')
       .type('form')
       .send(values)
       .end(function(err, response) {
         if (err) {
-          console.error(err);
-          return;
+          if (response.body && response.body['errors']) {
+            this.status.textContent = 'Please correct the errors and try again.'
+            const errors = response.body['errors']
+            for (var prop in errors) {
+              if (errors.hasOwnProperty(prop)) {
+                this.errors[prop.toLowerCase()] = errors[prop]
+              }
+            }
+            this.displayErrors()
+          } else {
+            console.log(err, response.body)
+          }
+          return
         }
 
-        console.log('Success!');
-      });
+        console.log(response.body);
+        this.status.textContent = 'Success!'
+      }.bind(this))
   }
 
   cleanAndValidate(values) {
@@ -75,6 +114,7 @@ export default class CreateForm {
     }
 
     // VALIDATE!
+    this.clearErrors()
 
     return values
   }

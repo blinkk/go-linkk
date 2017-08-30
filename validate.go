@@ -45,13 +45,14 @@ func (msg *Linkk) Validate() error {
 
 	// Paths cannot start with a reserved prefix.
 	reservedPrefixes := []string{
-		"/_/", "/_ah/",
+		"/_/", "/_ah/", "/~/",
 		"/css/", "/js/", "/static/",
-		"/~/",
 		"/favicon.ico", "/robots.txt", "/sitemap.xml",
 	}
 	prefix := stringPrefixInSlice(msg.Path, reservedPrefixes)
-	if prefix != "" {
+	if prefix != "" ||
+		stringInSlice(msg.Path, reservedPrefixes) ||
+		stringInSlice(msg.Path+"/", reservedPrefixes) {
 		validationErrors.Errors["Path"] = fmt.Sprintf("Path cannot start with a reserved prefix: %s.", prefix)
 	}
 
