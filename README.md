@@ -2,7 +2,7 @@
 
 Custom URL redirection on Go AppEngine.
 
-`go.blinkk.com/grow` --> `grow.io`
+[`go.blinkk.com/grow`](http://go.blinkk.com/grow) --> [`grow.io`](https://grow.io)
 
 # Usage
 
