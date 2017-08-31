@@ -2,9 +2,7 @@
 
 Custom URL redirection on Go AppEngine.
 
-ex:
-
-go.example.com/smart-stuff --> smart-stuff.com/some/other/url
+`go.example.com/smart-stuff` --> `smart-stuff.com/some/other/url`
 
 # Usage
 
