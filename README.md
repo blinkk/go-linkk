@@ -2,7 +2,7 @@
 
 Custom URL redirection on Go AppEngine.
 
-`go.example.com/smart-stuff` --> `smart-stuff.com/some/other/url`
+`go.blinkk.com/grow` --> `grow.io`
 
 # Usage
 
