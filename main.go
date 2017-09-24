@@ -3,16 +3,17 @@ package main
 import (
 	"errors"
 	"fmt"
-	"golang.org/x/net/context"
-	"google.golang.org/appengine"
-	"google.golang.org/appengine/datastore"
-	"google.golang.org/appengine/memcache"
-	"google.golang.org/appengine/user"
 	"net/http"
 	"net/url"
 	"os"
 	"regexp"
 	"strings"
+
+	"golang.org/x/net/context"
+	"google.golang.org/appengine"
+	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/memcache"
+	"google.golang.org/appengine/user"
 )
 
 func init() {
@@ -128,7 +129,7 @@ func redirectHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Root path, redirect to edit ui.
 	if r.URL.Path == "/" {
-		http.Redirect(w, r, "/_/ui/edit/index.html", 301)
+		http.Redirect(w, r, "/_/ui/edit/index.html", 302)
 	}
 
 	// Get the linkk from cache if available.
@@ -138,7 +139,7 @@ func redirectHandler(w http.ResponseWriter, r *http.Request) {
 		writeJSONError(ctx, w, err, "Unable to check cache for linkk", http.StatusInternalServerError)
 		return
 	} else {
-		http.Redirect(w, r, string(item.Value), 301)
+		http.Redirect(w, r, string(item.Value), 302)
 		return
 	}
 
@@ -149,20 +150,19 @@ func redirectHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Save to caceh and redirect.
+	// Save to cache and redirect.
 	if linkk != nil {
 		item := &memcache.Item{
 			Key:   linkk.Path,
 			Value: []byte(linkk.URL),
 		}
 		if err := memcache.Set(ctx, item); err != nil {
-			writeJSONError(ctx, w, err, "Unable to cache linkk", http.StatusInternalServerError)
 			return
 		}
-		http.Redirect(w, r, linkk.URL, 301)
+		http.Redirect(w, r, linkk.URL, 302)
 		return
 	}
 
 	// Not found, redirect to page to edit the redirect.
-	http.Redirect(w, r, fmt.Sprintf("/_/ui/edit/index.html?path=%s", url.QueryEscape(r.URL.Path)), 301)
+	http.Redirect(w, r, fmt.Sprintf("/_/ui/edit/index.html?path=%s", url.QueryEscape(r.URL.Path)), 302)
 }
