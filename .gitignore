@@ -19,3 +19,4 @@ ui/node_modules
 ui/dist
 
 app.yaml
+*.app.yaml
