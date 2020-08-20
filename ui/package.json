@@ -2,16 +2,18 @@
   "name": "Linkk",
   "private": true,
   "dependencies": {
-    "babel-loader": "^7.0.0",
-    "babili-webpack-plugin": "^0.0.11",
-    "deep-extend": "^0.4.1",
+    "superagent": "^6.0.0"
+  },
+  "devDependencies": {
+    "babel-loader": "^8.1.0",
+    "babili-webpack-plugin": "^0.1.2",
+    "deep-extend": "^0.6.0",
     "fs-readdir-recursive": "^1.0.0",
-    "gulp": "^3.9.1",
-    "gulp-autoprefixer": "^3.1.1",
-    "gulp-rename": "~1.2.2",
-    "gulp-sass": "^3.1.0",
-    "superagent": "^3.5.2",
-    "webpack": "2.5.1",
-    "webpack-stream": "3.2.0"
+    "gulp": "^4.0.2",
+    "gulp-autoprefixer": "^7.0.1",
+    "gulp-rename": "~2.0.0",
+    "gulp-sass": "^4.1.0",
+    "webpack": "^4.44.1",
+    "webpack-stream": "^5.2.1"
   }
 }
