@@ -17,6 +17,7 @@
 ui/build
 ui/node_modules
 ui/dist
+ui/.grow
 
 app.yaml
 *.app.yaml
