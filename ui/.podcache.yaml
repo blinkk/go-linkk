@@ -1,8 +1,0 @@
-dependencies:
-  /content/pages/edit.yaml:
-  - /dist/css/composite/edit.min.css
-  - /dist/css/composite/global.min.css
-  - /dist/js/composite/edit.min.js
-  - /dist/js/composite/global.min.js
-  - /partials/edit-form/edit-form.html
-objects: {}
