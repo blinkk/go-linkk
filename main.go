@@ -1,117 +1,36 @@
 package main
 
 import (
-	"errors"
+	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
-	"regexp"
-	"strings"
 
-	"golang.org/x/net/context"
-	"google.golang.org/appengine"
-	"google.golang.org/appengine/datastore"
-	"google.golang.org/appengine/memcache"
-	"google.golang.org/appengine/user"
+	// "cloud.google.com/go/memcache/apiv1beta2"
 )
 
-func init() {
-	http.HandleFunc("/_/api/edit", apiCreateHandler)
+func main() {
 	http.HandleFunc("/~/", infoHandler)
 	http.HandleFunc("/", redirectHandler)
-}
 
-func apiCreateHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := appengine.NewContext(r)
-	u := user.Current(ctx)
-	err := authUserDomain(u)
-	if err != nil {
-		writeJSONError(ctx, w, err, "", http.StatusUnauthorized)
-		return
+	// [START setting_port]
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+		log.Printf("Defaulting to port %s", port)
 	}
 
-	if r.Method == "POST" {
-		linkk := &Linkk{
-			Path:    r.FormValue("path"),
-			URL:     r.FormValue("url"),
-			Comment: r.FormValue("comment"),
-		}
-		linkk.Clean()
-		err = linkk.Validate()
-		if err != nil {
-			writeJSONError(ctx, w, err, "", http.StatusInternalServerError)
-			return
-		}
-
-		// Test for existing object to overwrite.
-		key, _, err := getLinkkByPath(ctx, linkk.Path)
-		if err != nil {
-			writeJSONError(ctx, w, err, "Unable to search for linkk", http.StatusInternalServerError)
-			return
-		}
-		if key == nil {
-			key = datastore.NewIncompleteKey(ctx, "Linkk", nil)
-		}
-		if _, err := datastore.Put(ctx, key, linkk); err != nil {
-			writeJSONError(ctx, w, err, "Unable to store new linkk", http.StatusInternalServerError)
-			return
-		}
-
-		writeJSONResponse(ctx, w, EntityResponse{Key: key, Entity: linkk})
+	log.Printf("Listening on port %s", port)
+	if err := http.ListenAndServe(":"+port, nil); err != nil {
+		log.Fatal(err)
 	}
-}
-
-func authUserDomain(u *user.User) error {
-	if !appengine.IsDevAppServer() && u.AuthDomain != "gmail.com" {
-		return fmt.Errorf("Invalid auth domain set for authorization: %s", u.AuthDomain)
-	}
-
-	domains := getAuthDomains()
-
-	if appengine.IsDevAppServer() {
-		domains = append(domains, "example.com")
-	}
-
-	if len(domains) == 0 {
-		return errors.New("No auth domains configured for authorization")
-	}
-
-	r, _ := regexp.Compile("@(.*)$")
-	domain := r.FindStringSubmatch(u.Email)
-
-	if !stringInSlice(domain[1], domains) {
-		return fmt.Errorf("Invalid authorization domain: %s", domain[1])
-	}
-
-	return nil
-}
-
-func getAuthDomains() []string {
-	return strings.Split(os.Getenv("AUTH_DOMAINS"), "|")
-}
-
-func getLinkkByPath(ctx context.Context, path string) (key *datastore.Key, linkk *Linkk, err error) {
-	path = strings.ToLower(path)
-	q := datastore.NewQuery("Linkk").Filter("Path =", path)
-	t := q.Run(ctx)
-	for {
-		var linkk Linkk
-		key, err := t.Next(&linkk)
-		if err == datastore.Done {
-			break
-		}
-		if err != nil {
-			return nil, nil, err
-		}
-		return key, &linkk, nil
-	}
-	// No linkk found.
-	return nil, nil, nil
+	// [END setting_port]
 }
 
 func infoHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := appengine.NewContext(r)
+	ctx := context.Background()
 	path := r.URL.Path[2:]
 
 	// Search for the path in the existing linkks.
@@ -125,23 +44,24 @@ func infoHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func redirectHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := appengine.NewContext(r)
+	ctx := context.Background()
 
 	// Root path, redirect to edit ui.
 	if r.URL.Path == "/" {
 		http.Redirect(w, r, "/_/ui/edit/index.html", 302)
 	}
 
-	// Get the linkk from cache if available.
-	if item, err := memcache.Get(ctx, r.URL.Path); err == memcache.ErrCacheMiss {
-		// Not found, ignore.
-	} else if err != nil {
-		writeJSONError(ctx, w, err, "Unable to check cache for linkk", http.StatusInternalServerError)
-		return
-	} else {
-		http.Redirect(w, r, string(item.Value), 302)
-		return
-	}
+	// TODO: Enable caching
+	// // Get the linkk from cache if available.
+	// if item, err := memcache.Get(ctx, r.URL.Path); err == memcache.ErrCacheMiss {
+	// 	// Not found, ignore.
+	// } else if err != nil {
+	// 	writeJSONError(ctx, w, err, "Unable to check cache for linkk", http.StatusInternalServerError)
+	// 	return
+	// } else {
+	// 	http.Redirect(w, r, string(item.Value), 302)
+	// 	return
+	// }
 
 	// Search for the path in the existing linkks.
 	_, linkk, err := getLinkkByPath(ctx, r.URL.Path)
@@ -152,13 +72,14 @@ func redirectHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Save to cache and redirect.
 	if linkk != nil {
-		item := &memcache.Item{
-			Key:   linkk.Path,
-			Value: []byte(linkk.URL),
-		}
-		if err := memcache.Set(ctx, item); err != nil {
-			return
-		}
+		// TODO: Enable caching
+		// item := &memcache.Item{
+		// 	Key:   linkk.Path,
+		// 	Value: []byte(linkk.URL),
+		// }
+		// if err := memcache.Set(ctx, item); err != nil {
+		// 	return
+		// }
 		http.Redirect(w, r, linkk.URL, 302)
 		return
 	}

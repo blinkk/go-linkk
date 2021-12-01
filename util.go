@@ -1,15 +1,14 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"reflect"
 	"strings"
 
-	"golang.org/x/net/context"
-
-	"google.golang.org/appengine/datastore"
-	"google.golang.org/appengine/log"
+	"cloud.google.com/go/datastore"
 )
 
 // DeleteResponse Structure of returning a delete request.
@@ -26,6 +25,11 @@ type EntityResponse struct {
 // ListResponse Structure of returning multiple entities from a request.
 type ListResponse struct {
 	Items []EntityResponse `json:"items"`
+}
+
+// MessageResponse Structure of returning a message from the request.
+type MessageResponse struct {
+	Message string `json:"message"`
 }
 
 // Determine if a string is in a list of strings.
@@ -52,7 +56,7 @@ func stringPrefixInSlice(a string, list []string) string {
 func writeJSONResponse(ctx context.Context, w http.ResponseWriter, s interface{}) {
 	js, err := json.Marshal(s)
 	if err != nil {
-		log.Errorf(ctx, "error marshalling: %v", err)
+		fmt.Errorf("error marshalling: %v", err)
 		http.Error(w, "Unable to marshal response", http.StatusInternalServerError)
 		return
 	}
@@ -66,7 +70,7 @@ func writeJSONError(ctx context.Context, w http.ResponseWriter, e error, msg str
 	var js []byte
 	var err error
 
-	log.Errorf(ctx, "error: %v", e)
+	fmt.Errorf("error: %v", e)
 
 	if reflect.TypeOf(e).Name() == "ValidationError" {
 		js, err = json.Marshal(e)
@@ -81,7 +85,7 @@ func writeJSONError(ctx context.Context, w http.ResponseWriter, e error, msg str
 	}
 
 	if err != nil {
-		log.Errorf(ctx, "error marshalling: %v", err)
+		fmt.Errorf("error marshalling: %v", err)
 		http.Error(w, e.Error(), http.StatusInternalServerError)
 		return
 	}

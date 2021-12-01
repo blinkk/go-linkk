@@ -1,39 +1,5 @@
-runtime: go
-api_version: go1
+runtime: go113
 
 handlers:
-- url: /js/
-  static_dir: ui/build/js
-- url: /css/
-  static_dir: ui/build/css
-- url: /_/ui/
-  login: required
-  static_dir: ui/build
-- url: /_/.*
-  login: required
-  script: _go_app
 - url: /.*
-  script: _go_app
-
-skip_files:
-- ^(.*/)?#.*#
-- ^(.*/)?.*~
-- ^(.*/)?.*\.py[co]
-- ^(.*/)?\..*
-- ^(.*/)?\.DS_Store
-- ^\.git/.*
-- ^ui/\.podcache.yaml$
-- ^ui/gulpfile.js$
-- ^ui/package-lock.json$
-- ^ui/package.json$
-- ^ui/podspec.yaml$
-- ^ui/content$
-- ^ui/dist$
-- ^ui/node_modules$
-- ^ui/partials$
-- ^ui/source$
-- ^ui/static$
-- ^ui/views$
-
-env_variables:
-  AUTH_DOMAINS: example.com|example2.com
+  script: auto

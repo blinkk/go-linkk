@@ -1,0 +1,15 @@
+runtime: go113
+service: linkk-admin
+
+handlers:
+- url: /js/
+  static_dir: ui/build/js
+- url: /css/
+  static_dir: ui/build/css
+- url: /_/ui/
+  static_dir: ui/build
+- url: /_/.*
+  script: auto
+
+env_variables:
+  AUTH_DOMAINS: example.com|example2.com

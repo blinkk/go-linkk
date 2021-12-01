@@ -1,0 +1,4 @@
+dispatch:
+  # Send all admin urls to the admin service.
+  - url: "*/_*"
+    service: linkk-admin
